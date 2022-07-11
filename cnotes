@@ -1,0 +1,63 @@
+<?php
+session_start();
+
+$_SESSION['test'] = $_GET["id"];
+
+
+
+			/* dreamhost connection,with port number 993 */
+			$host = '{imap.dreamhost.com:993/imap/ssl/novalidate-cert/norsh}INBOX';
+			/* Your gmail credentials */
+			$user = '';
+			$password = '';
+			/* Establish a IMAP connection */
+			$conn = imap_open($host, $user, $password)
+				or die('unable to connect Dreamhost: ' . imap_last_error());
+
+			/* Search emails from inbox*/
+			$mails = imap_search($conn, 'From "' . $_SESSION['test'] . '"');
+
+			/* loop through each email id mails are available. */
+			if ($mails) {
+
+				/* Mail output variable starts*/
+				$mailOutput = '';
+				$mailOutput.= '<table class="table table-responsive table-hover table-bordered" cellpadding="5%" cellspacing="25%"><tr><th class="thead">Subject </th>	<th class ="thead">From </th><th class="thead"> Date Time </th> <th class="thead"> Content </th></tr>';
+
+				/* rsort is used to display the latest emails on top */
+				rsort($mails);
+
+				/* For each email */
+				foreach ($mails as $email_number) {
+
+					/* Retrieve specific email information*/
+					$headers = imap_fetch_overview($conn, $email_number, 0);
+
+					/* Returns a particular section of the body*/
+					$message = imap_fetchbody($conn, $email_number, '1');
+					$subMessage = substr($message, 0, 150);
+					$finalMessage = trim(quoted_printable_decode($subMessage));
+
+					$mailOutput.= '<div class="row">';
+
+					/* Gmail MAILS header information */				
+					$mailOutput.= '<td><span class="columnClass">' .
+								$headers[0]->subject . '</span></td> ';
+					$mailOutput.= '<td><span class="columnClass">' .
+								$headers[0]->from . '</span></td>';
+					$mailOutput.= '<td><span class="columnClass">' .
+								$headers[0]->date . '</span></td>';
+					$mailOutput.= '</div>';
+
+					/* Mail body is returned */
+					$mailOutput.= '<td><span class="column">' .
+					$finalMessage . '</span></td></tr></div>';
+				}// End foreach
+				$mailOutput.= '</table>';
+				echo $mailOutput;
+			}//endif
+
+
+			/* imap connection is closed */
+			imap_close($conn);
+			?>
